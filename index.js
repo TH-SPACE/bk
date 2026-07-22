@@ -1,8 +1,14 @@
 require('dotenv').config();
 const conn = require('./db');
-const { criarTabelaAtualizacao, criarTabelaBacklog } = require('./schema');
+const {
+  criarTabelaAtualizacao,
+  garantirRegistroAtualizacao,
+  criarTabelaBacklog,
+  criarTabelaInstalacoes
+} = require('./schema');
 const { baixarBacklog } = require('./scraper');
-const { importarArquivo } = require('./importBacklog');
+
+const TIPO_SERVICO = (process.env.TIPO_SERVICO || 'instalacoes').toLowerCase();
 
 async function main() {
   const usuario = process.env.ELOS_USER;
@@ -16,10 +22,23 @@ async function main() {
   // Garante que as tabelas existem antes de usar (idempotente: so cria se faltar).
   const conexao = await conn;
   await criarTabelaAtualizacao(conexao);
-  await criarTabelaBacklog(conexao, process.env.BACKLOG_TABLE || 'backlog_elos');
 
-  const [linhas] = await (await conn).query(
-    "SELECT DATE_FORMAT(datahora, '%Y-%m-%d %H:%i:%s') as data FROM atualizacao WHERE tipo = 'backlog_elos'"
+  let importarArquivo;
+  let tipoAtualizacao;
+  if (TIPO_SERVICO === 'reparos') {
+    ({ importarArquivo } = require('./importBacklog'));
+    await criarTabelaBacklog(conexao, process.env.BACKLOG_TABLE || 'backlog_elos');
+    tipoAtualizacao = 'backlog_elos';
+  } else {
+    ({ importarArquivo } = require('./importInstalacoes'));
+    await criarTabelaInstalacoes(conexao, process.env.INSTALACOES_TABLE || 'backlog_instalacoes');
+    tipoAtualizacao = 'backlog_instalacoes';
+  }
+  await garantirRegistroAtualizacao(conexao, tipoAtualizacao);
+
+  const [linhas] = await conexao.query(
+    'SELECT DATE_FORMAT(datahora, "%Y-%m-%d %H:%i:%s") as data FROM atualizacao WHERE tipo = ?',
+    [tipoAtualizacao]
   );
   const dataAtualizacaoAnterior = linhas[0] ? linhas[0].data : null;
 
@@ -37,9 +56,9 @@ async function main() {
   const stats = await importarArquivo(arquivo);
   console.log('Importacao concluida:', stats);
 
-  await (await conn).query(
-    "UPDATE atualizacao SET datahora = ? WHERE tipo = 'backlog_elos'",
-    [dataAtualizacao]
+  await conexao.query(
+    'UPDATE atualizacao SET datahora = ? WHERE tipo = ?',
+    [dataAtualizacao, tipoAtualizacao]
   );
 }
 

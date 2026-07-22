@@ -1,12 +1,13 @@
 {
   "name": "elos-backlog-scraper",
   "version": "1.0.0",
-  "description": "Raspagem independente do backlog Elos: login, exporta CSV e sobe para a tabela backlog_elos",
+  "description": "Raspagem independente do backlog Elos (Instalacoes e Reparos): login, exporta CSV e sobe para o banco",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "setup-db": "node setup-db.js",
-    "test-import": "node test-import.js"
+    "test-import": "node test-import.js",
+    "test-import-instalacoes": "node test-import-instalacoes.js"
   },
   "dependencies": {
     "dotenv": "^16.6.1",

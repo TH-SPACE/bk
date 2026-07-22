@@ -1,6 +1,11 @@
 require('dotenv').config();
 const mysql = require('mysql2/promise');
-const { criarTabelaAtualizacao, criarTabelaBacklog } = require('./schema');
+const {
+  criarTabelaAtualizacao,
+  garantirRegistroAtualizacao,
+  criarTabelaBacklog,
+  criarTabelaInstalacoes
+} = require('./schema');
 
 async function setupDatabase() {
   const conn = await mysql.createConnection({
@@ -16,9 +21,15 @@ async function setupDatabase() {
   await criarTabelaAtualizacao(conn);
   console.log('Tabela atualizacao ok.');
 
-  const tableName = process.env.BACKLOG_TABLE || 'backlog_elos';
-  await criarTabelaBacklog(conn, tableName);
-  console.log(`Tabela ${tableName} ok.`);
+  const tableReparos = process.env.BACKLOG_TABLE || 'backlog_elos';
+  await criarTabelaBacklog(conn, tableReparos);
+  await garantirRegistroAtualizacao(conn, 'backlog_elos');
+  console.log(`Tabela ${tableReparos} ok.`);
+
+  const tableInstalacoes = process.env.INSTALACOES_TABLE || 'backlog_instalacoes';
+  await criarTabelaInstalacoes(conn, tableInstalacoes);
+  await garantirRegistroAtualizacao(conn, 'backlog_instalacoes');
+  console.log(`Tabela ${tableInstalacoes} ok.`);
 
   await conn.end();
   console.log('Setup finalizado.');

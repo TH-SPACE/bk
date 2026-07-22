@@ -9,9 +9,15 @@ async function criarTabelaAtualizacao(conn) {
       UNIQUE KEY idx_tipo (tipo)
     )
   `);
-  await conn.query(`
-    INSERT IGNORE INTO atualizacao (tipo, datahora) VALUES ('backlog_elos', '2000-01-01 00:00:00')
-  `);
+}
+
+// Garante que existe uma linha de controle para o `tipo` informado (ex:
+// 'backlog_elos', 'backlog_instalacoes'), sem sobrescrever se ja existir.
+async function garantirRegistroAtualizacao(conn, tipo) {
+  await conn.query(
+    "INSERT IGNORE INTO atualizacao (tipo, datahora) VALUES (?, '2000-01-01 00:00:00')",
+    [tipo]
+  );
 }
 
 async function criarTabelaBacklog(conn, tableName) {
@@ -130,4 +136,135 @@ async function criarTabelaBacklog(conn, tableName) {
   `);
 }
 
-module.exports = { criarTabelaAtualizacao, criarTabelaBacklog };
+// Tabela do backlog de Instalacoes -- schema copiado da tabela real que ja existia
+// no banco `indicadores` do usuario (105 colunas: ID autoincrement como chave,
+// a maioria das colunas em TEXT solto, so as 6 usadas em filtro/indice viram
+// VARCHAR(30), e ARQUIVO_ORIGEM/IMPORTADO_EM rastreiam a origem de cada linha).
+// NUMERO_OS sozinho NAO e unico (uma OS pode ter varias linhas, uma por
+// produto/atividade), entao nao da pra usar upsert por chave natural -- a
+// estrategia de carga e "snapshot": truncar e recarregar a cada raspagem
+// (ver importInstalacoes.js).
+async function criarTabelaInstalacoes(conn, tableName) {
+  await conn.query(`
+    CREATE TABLE IF NOT EXISTS \`${tableName}\` (
+      ID INT AUTO_INCREMENT PRIMARY KEY,
+      NUMERO_OS VARCHAR(30) DEFAULT '',
+      STATUS VARCHAR(30) DEFAULT '',
+      STATUS_REASON TEXT,
+      DATA_STATUS TEXT,
+      ARMARIO VARCHAR(30) DEFAULT '',
+      STREETNAME TEXT,
+      STATEORPROVINCE TEXT,
+      POSTCODE TEXT,
+      CNL TEXT,
+      NEIGHBORDHOOD TEXT,
+      CATEGORIZES_TYPE TEXT,
+      SPECIFICATION_TYPE VARCHAR(30) DEFAULT '',
+      SPECIFICATION_PRODUCT TEXT,
+      DETAIL TEXT,
+      DATA_ABERTURA TEXT,
+      DATA_VENCIMENTO TEXT,
+      TIME_SLOT TEXT,
+      PHYSICALRESOURCESUMMARY TEXT,
+      TELEPHONENUMERIC TEXT,
+      DESIGNATOR TEXT,
+      CIDADE TEXT,
+      CLUSTER_ VARCHAR(30) DEFAULT '',
+      REGIONAL VARCHAR(30) DEFAULT '',
+      CUSTOMER_DOCUMENTNUMERIC TEXT,
+      CUSTOMER_NAME TEXT,
+      EXECUTEDBYLOGIN TEXT,
+      EXECUTEDBYNAME TEXT,
+      NOTDONEREASON TEXT,
+      PRIORITY TEXT,
+      SCHEDULEPROFILE TEXT,
+      CUSTOMER_SEGMENT TEXT,
+      CUSTOMER_TEMPERATURE TEXT,
+      CUSTOMER_RANK TEXT,
+      SEGMENTACAO TEXT,
+      SERVICE_TECHNOLOGY TEXT,
+      SPECIFICATION_ACRONYM TEXT,
+      PORTABILITY_STATUS TEXT,
+      PORTABILITY_START TEXT,
+      PORTABILITY_END TEXT,
+      REDESPACHO TEXT,
+      DATEOFSTATUSPORTABILITY TEXT,
+      DATEOFSTATUSEXECUTION TEXT,
+      CONTRACTOR TEXT,
+      PON TEXT,
+      RPON TEXT,
+      AGENDADO_NA_VENDA TEXT,
+      VELOCIDADEADSL TEXT,
+      DATA_AGENDADA TEXT,
+      DTH_PURO TEXT,
+      TOTAL_PONTO_ADICIONAL TEXT,
+      PACOTE_TV TEXT,
+      FLAG_GPON TEXT,
+      DATA_CANCELAMENTO TEXT,
+      LOGIN_CANCELAMENTO TEXT,
+      MOTIVO_DE_CANCELAMENTO TEXT,
+      OBSERVACAO TEXT,
+      REDE TEXT,
+      MICROAREA TEXT,
+      TELEPHONIC_AREA TEXT,
+      CENTRAL_OFFICE TEXT,
+      TECNOLOGIA_ACESSO TEXT,
+      DESIGNADOR_TV TEXT,
+      DTH_CONECTADO TEXT,
+      PRODUTOS_ADICIONAR TEXT,
+      PRODUTOS_MODIFICAR TEXT,
+      PRODUTOS_ATIVO TEXT,
+      PRODUTOS_DESCONECTAR TEXT,
+      DATA_CARGA TEXT,
+      DATA_LAST_UPDATE_PLWO TEXT,
+      TECNOLOGIA_TV TEXT,
+      LATITUDE TEXT,
+      LONGITUDE TEXT,
+      CLIENTE_GOAS TEXT,
+      MARCACAO_VIA_CHAT TEXT,
+      PLATFORM TEXT,
+      EXCECAO_ATUAL TEXT,
+      EXCECAO_ATUAL_ATIVIDADE TEXT,
+      EXCECAO_ATUAL_GRUPO TEXT,
+      RECUSA_ANTECIPAR TEXT,
+      DATA_COMPROMISSO TEXT,
+      DATA_PRIMEIRA_AGENDA TEXT,
+      DESC_GRUPO_RESPONSABILIDADE TEXT,
+      DESC_CANAL TEXT,
+      DESC_GRUPO_CANAL TEXT,
+      FLAG_CANAL_ATENDIMENTO TEXT,
+      FLAG_VENDE_INSTALA TEXT,
+      CLIENTES_V_SAV TEXT,
+      NOM_SISTEMA_ORIGEM TEXT,
+      FLAG_MATRIX TEXT,
+      FLAG_EVEREST TEXT,
+      FLAG_MT24H TEXT,
+      FLAG_PRD_ALTA TEXT,
+      ID_PRD_ULT_DESC TEXT,
+      DESIGNADOR_ACESSO TEXT,
+      FLAG_CASAINTELIGENTE TEXT,
+      PARENT1 TEXT,
+      PARENT2 TEXT,
+      PARENT3 TEXT,
+      PARENT4 TEXT,
+      FLAG_FIBRATODOS TEXT,
+      FLAG_ANATEL TEXT,
+      FLAG_RIFAINA TEXT,
+      ARQUIVO_ORIGEM VARCHAR(255),
+      IMPORTADO_EM DATETIME,
+      INDEX idx_numero_os (NUMERO_OS),
+      INDEX idx_armario (ARMARIO),
+      INDEX idx_cluster (CLUSTER_),
+      INDEX idx_regional (REGIONAL),
+      INDEX idx_status (STATUS),
+      INDEX idx_specification_type (SPECIFICATION_TYPE)
+    )
+  `);
+}
+
+module.exports = {
+  criarTabelaAtualizacao,
+  garantirRegistroAtualizacao,
+  criarTabelaBacklog,
+  criarTabelaInstalacoes
+};
