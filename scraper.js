@@ -91,6 +91,22 @@ async function baixarBacklog({ usuario, senha, dataAtualizacaoAnterior }) {
     await esperar(randomIntFromInterval(2000, 6000));
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '4-click-menu-2.jpg') });
 
+    // O dashboard (painel Qlik/BI) carrega de forma assincrona depois do clique no menu:
+    // a tela ja aparece com o titulo "Backlog", mas o conteudo (e o campo oculto
+    // #hdDataAtualizacao) so surge alguns segundos depois. Por isso esperamos ativamente
+    // pelo elemento em vez de confiar num sleep fixo.
+    console.log('Aguardando o dashboard de backlog carregar...');
+    try {
+      await page.waitForSelector('#hdDataAtualizacao', { timeout: 60000 });
+    } catch (err) {
+      await page.screenshot({ path: path.join(SCREENSHOT_DIR, '5-erro-dashboard-nao-carregou.jpg') });
+      throw new Error(
+        'O campo #hdDataAtualizacao nao apareceu em 60s apos abrir o Backlog. Veja screenshots/5-erro-dashboard-nao-carregou.jpg: ' +
+        'se a tela estiver vazia, o dashboard pode estar lento (aumente o timeout); se tiver conteudo mas sem o campo esperado, o layout do Elos mudou.'
+      );
+    }
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '5-dashboard-carregado.jpg') });
+
     const dataAtualizacaoRaw = await page.$eval('#hdDataAtualizacao', (input) => input.getAttribute('value'));
     const [dataParte, horaParte] = dataAtualizacaoRaw.split(' ');
     const [dia, mes, ano] = dataParte.split('/');
