@@ -44,8 +44,12 @@ O que **foi validado de verdade**, usando o seu MariaDB local e uma fatia real d
 npm install
 cp .env.example .env
 # edite o .env: credenciais do Elos + dados do banco
-npm run setup-db      # cria as tabelas `atualizacao` e `backlog_elos` (se ainda nao existirem)
+npm run setup-db      # opcional: cria as tabelas com antecedencia
 ```
+
+`npm start` já verifica e cria as tabelas `atualizacao` e `backlog_elos` sozinho se elas não
+existirem no banco (`DB_NAME` do `.env`), então rodar `npm run setup-db` antes é opcional —
+serve só se você quiser conferir o schema sem rodar a raspagem inteira.
 
 ## Uso
 

@@ -1,5 +1,6 @@
 require('dotenv').config();
 const conn = require('./db');
+const { criarTabelaAtualizacao, criarTabelaBacklog } = require('./schema');
 const { baixarBacklog } = require('./scraper');
 const { importarArquivo } = require('./importBacklog');
 
@@ -11,6 +12,11 @@ async function main() {
     console.error('Defina ELOS_USER e ELOS_PASSWORD no .env antes de rodar.');
     process.exit(1);
   }
+
+  // Garante que as tabelas existem antes de usar (idempotente: so cria se faltar).
+  const conexao = await conn;
+  await criarTabelaAtualizacao(conexao);
+  await criarTabelaBacklog(conexao, process.env.BACKLOG_TABLE || 'backlog_elos');
 
   const [linhas] = await (await conn).query(
     "SELECT DATE_FORMAT(datahora, '%Y-%m-%d %H:%i:%s') as data FROM atualizacao WHERE tipo = 'backlog_elos'"

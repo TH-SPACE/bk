@@ -1,6 +1,6 @@
 require('dotenv').config();
 const mysql = require('mysql2/promise');
-const { criarTabelaBacklog } = require('./schema');
+const { criarTabelaAtualizacao, criarTabelaBacklog } = require('./schema');
 
 async function setupDatabase() {
   const conn = await mysql.createConnection({
@@ -13,17 +13,7 @@ async function setupDatabase() {
 
   console.log('Conectado. Criando tabelas...');
 
-  await conn.query(`
-    CREATE TABLE IF NOT EXISTS atualizacao (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      tipo VARCHAR(100) NOT NULL,
-      datahora DATETIME,
-      UNIQUE KEY idx_tipo (tipo)
-    )
-  `);
-  await conn.query(`
-    INSERT IGNORE INTO atualizacao (tipo, datahora) VALUES ('backlog_elos', '2000-01-01 00:00:00')
-  `);
+  await criarTabelaAtualizacao(conn);
   console.log('Tabela atualizacao ok.');
 
   const tableName = process.env.BACKLOG_TABLE || 'backlog_elos';
