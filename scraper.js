@@ -17,6 +17,7 @@ function randomIntFromInterval(min, max) {
 const ELOS_URL = process.env.ELOS_URL || 'http://10.31.36.30/elos';
 const DOWNLOAD_DIR = path.resolve(__dirname, process.env.DOWNLOAD_DIR || 'downloads');
 const SCREENSHOT_DIR = path.resolve(__dirname, process.env.SCREENSHOT_DIR || 'screenshots');
+const TIPO_SERVICO = (process.env.TIPO_SERVICO || 'instalacoes').toLowerCase();
 
 // Faz login no Elos, navega ate o dashboard de backlog, aplica os filtros
 // de regional e baixa o CSV exportado. Devolve o caminho do arquivo baixado
@@ -125,9 +126,16 @@ async function baixarBacklog({ usuario, senha, dataAtualizacaoAnterior }) {
     // ATENCAO: estes XPaths sao posicionais (copiados 1:1 do script original)
     // e dependem do layout exato da tela do Elos. Se o clique cair no
     // elemento errado, confira os screenshots em ./screenshots para ajustar.
-    const filtroPrincipal = await page.$$('xpath/./html/body/div[3]/div/div[4]/div/div[2]/div/div[1]/div/div[2]/div[2]/div/div/label/input');
-    await filtroPrincipal[0].click();
-    await esperar(randomIntFromInterval(2000, 6000));
+
+    // "Tipo de Servico": a tela abre por padrao em Instalacoes. So clicamos para
+    // trocar quando TIPO_SERVICO=reparos for explicitamente pedido no .env.
+    if (TIPO_SERVICO === 'reparos') {
+      const filtroPrincipal = await page.$$('xpath/./html/body/div[3]/div/div[4]/div/div[2]/div/div[1]/div/div[2]/div[2]/div/div/label/input');
+      await filtroPrincipal[0].click();
+      await esperar(randomIntFromInterval(2000, 6000));
+    } else if (TIPO_SERVICO !== 'instalacoes') {
+      console.log(`TIPO_SERVICO="${TIPO_SERVICO}" nao reconhecido (use "instalacoes" ou "reparos"). Mantendo o padrao da tela (Instalacoes).`);
+    }
 
     const xpathsFiltroRegional = [4, 1, 3, 5];
     for (const posicao of xpathsFiltroRegional) {

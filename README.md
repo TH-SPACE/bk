@@ -69,6 +69,7 @@ backlog várias vezes por dia.
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | sim | — | Conexão com o MariaDB/MySQL |
 | `ELOS_USER`, `ELOS_PASSWORD` | sim | — | Login no site Elos |
 | `ELOS_URL` | não | `http://10.31.36.30/elos` | URL do Elos |
+| `TIPO_SERVICO` | não | `instalacoes` | `instalacoes` ou `reparos` — a tela do Elos ja abre em Instalacoes por padrao, entao com `instalacoes` o script nao clica em nada nesse filtro |
 | `CHROME_PATH` | não | detecta automaticamente | Caminho do Chrome/Chromium |
 | `HEADLESS` | não | `true` | Coloque `false` para ver o navegador rodando (útil pra debugar seletor) |
 | `DOWNLOAD_DIR`, `SCREENSHOT_DIR` | não | `./downloads`, `./screenshots` | Pastas de saída |
